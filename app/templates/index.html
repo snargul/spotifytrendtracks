@@ -1,0 +1,84 @@
+{% extends "base.html" %}
+
+{% block content %}
+    <p>-------------------------------------------------------------------------------------------------------------</p>
+    <h6>List top 5 popular tracks of a randomly selected artist of selected according to Music Genre Type</h6>
+    <p>-------------------------------------------------------------------------------------------------------------</p>
+    <p>
+    <p>Please, enter an available genre type</p>
+    <div class="form-group">
+        <label>
+            <input type="text" name="genre" id="genre" placeholder="Enter genre type"/>
+        </label>
+        <button type="submit" onclick="submit_genre()">Search</button>
+    </div>
+    <div class="form-group">
+        <p>
+        <br>
+        <div id="content"></div>
+        <p>Available Genre Types are listed below:</p>
+        <div class="btn-group-vertical" role="group" aria-label="First group">
+            {% for genre in genre_list %}
+                <button class="btn btn-light" type="submit" onclick="get_track_list('{{genre}}')">{{genre}}</button>
+            {% endfor %}
+        </div>
+    </div>
+{% endblock %}
+
+{% block script %}
+<script>
+  function submit_genre() {
+    let genre_type_ref = document.getElementById("genre")
+    let selected_genre = genre_type_ref.value
+    get_track_list(selected_genre)
+  }
+
+  function get_track_list(selected_genre) {
+    fetch(`${window.origin}/tracks/${selected_genre}`, {
+      method: "GET",
+      credentials: "include",
+      cache: "no-cache",
+      headers: new Headers({
+        "content-type": "application/json"
+      })
+    })
+      .then(function (response) {
+        if (response.status !== 200) {
+          console.log(`Response status was not 200 ${response.status}`)
+          return ;
+        }
+
+        response.json().then(function (data) {
+          let track_table = "<h2>Genre: " + selected_genre + "</h2>\n" +
+            "            <br>\n" +
+            "            <h6>Listing top 5 popular Spotify tracks of a randomly selected artist</h6>\n" +
+            "            <br>\n" +
+            "            <table class=\"table table-hover\">\n" +
+            "                <thead>\n" +
+            "                <tr>\n" +
+            "                    <th scope=\"col\"/>\n" +
+            "                    <th scope=\"col\">Artist</th>\n" +
+            "                    <th scope=\"col\">Track</th>\n" +
+            "                    <th scope=\"col\">Release Date</th>\n" +
+            "                </tr>\n" +
+            "                </thead>\n" +
+            "                <tbody>\n"
+          for (let i = 0; i < data.length; i++) {
+            let track = data[i];
+            track_table +=
+            "                <tr style=\"height:400%\">\n" +
+            "                    <th scope=\"row\" class=\"col-1\"><img src=" + track['album_image_url'] + " alt=\"...\"  class=\"img-thumbnail\"></th>\n" +
+            "                    <td>" + track['artist'] + "</td>\n" +
+            "                    <td>" + track['track'] + "</td>\n" +
+            "                    <td>" + track['release_date'] + "</td>\n" +
+            "                </tr>\n"
+          }
+          track_table +=
+            "                </tbody>\n" +
+            "            </table>"
+          document.getElementById("content").innerHTML = track_table
+        })
+      })
+  }
+</script>
+{% endblock %}
