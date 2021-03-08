@@ -3,4 +3,5 @@ app_server_port = '8080'
 popular_track_list_range = 5
 genre_json_file_path = '/app/resources/genres.json'
 enter_genre_template = 'index.html'
+track_list_page_template = 'tracks.html'
 error_page_template = 'error.html'

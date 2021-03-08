@@ -1,57 +1,48 @@
-from app.service import JsonService
 from app.service.SpotifyApiService import SpotifyApiService
 from app.service.JsonService import JsonService
-from app.data.constants import genre_json_file_path
-from app.data import messages
+from app.model.Artist import Artist
+from app.model.Album import Album
+from app.model.Track import Track
 
 
 class AppService(object):
-    genre_json_file_path = None
-    genre = None
-    artist_name = None
-    track_list = None
+    json_service = None
+    spotify_api_service = None
 
-    def __init__(self, genre=None, *args, **kwargs):
+    def __init__(self, json_service: JsonService, spotify_api_service: SpotifyApiService,
+                 input_empty_msg, input_not_match_msg, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        self.genre_json_file_path = genre_json_file_path
-        self.genre = genre
-
-    def setGenre(self, genre):
-        self.genre = genre
+        self.json_service = json_service
+        self.spotify_api_service = spotify_api_service
+        self.input_empty_msg = input_empty_msg
+        self.input_not_match_msg = input_not_match_msg
 
     def listTopTracks(self, genre):
-        json_service = JsonService(genre_json_file_path, genre)
-        selected_artist = json_service.getRandomValue()
-        sp_api = SpotifyApiService(selected_artist)
-        artist_info = sp_api.searchArtist()
-        artist_name = artist_info['name']
-        track_list = sp_api.readTopTracks()
-        return self.top_list_obj(artist_name, track_list)
+        selected_artist = self.json_service.getRandomValueByKey(genre)
+        artist_info = self.spotify_api_service.searchArtist(selected_artist)
+        artist = Artist(artist_info['id'], artist_info['name'])
+        track_list = self.spotify_api_service.readTopTracks(artist.artist_id)
+        obj_list = self.createList(artist, track_list)
+        return obj_list
 
     @staticmethod
-    def top_list_obj(artist_name, track_list):
-        top_list = []
-        for track in track_list:
-            track_info = {
-                'artist': artist_name,
-                'track': track['name'],
-                'album_image_url': track['album']['images'][0]['url'],
-                'release_date': track['album']['release_date']
-            }
-            top_list.append(track_info)
-        return top_list
+    def createList(artist, track_list):
+        result_list = []
+        for each in track_list:
+            album = Album(each['album']['images'][0]['url'], each['album']['release_date'])
+            track = Track(artist.full_name, each['name'], album.image_url, album.release_date)
+            result_list.append(track)
+        return result_list
 
-    @staticmethod
-    def getGenreTypeList():
-        json_service = JsonService(genre_json_file_path)
-        return json_service.getJsonKeys()
+    def getGenreTypeList(self):
+        return self.json_service.getJsonKeys()
 
     def checkInputOK(self, genre_input):
         if genre_input is None:
-            return False, messages.input_empty
+            return False, self.input_empty_msg
         genre = str(genre_input).lower()
         genre_list = self.getGenreTypeList()
         if genre not in genre_list:
-            return False, messages.input_not_match
+            return False, self.input_not_match_msg
         else:
             return True, genre

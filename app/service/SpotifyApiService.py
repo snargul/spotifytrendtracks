@@ -1,32 +1,32 @@
-from app.service.SpotifyAuthService import SpotifyAuthService
-from app.data.constants import popular_track_list_range
-from app.data import messages
+from app.service import SpotifyAuthService
 
 
 class SpotifyApiService(object):
     spotify = None
-    artist_name = None
-    artist_id = None
+    list_range = None
+    artist_not_found_msg = ''
+    track_not_found_msg = ''
 
-    def __init__(self, artist_name, *args, **kwargs):
+    def __init__(self, spotify_auth_service: SpotifyAuthService, list_range, artist_not_found_msg, track_not_found_msg,
+                 *args, **kwargs):
         super().__init__(*args, **kwargs)
-        self.spotify = SpotifyAuthService().getSpotify()
-        self.artist_name = artist_name
+        self.spotify = spotify_auth_service.getSpotify()
+        self.list_range = list_range
+        self.artist_not_found_msg = artist_not_found_msg
+        self.track_not_found_msg = track_not_found_msg
 
-    def searchArtist(self):
-        results = self.spotify.search(q='artist:' + self.artist_name, type='artist')
+    def searchArtist(self, artist_name):
+        results = self.spotify.search(q='artist:' + artist_name, type='artist')
         items = results['artists']['items']
         if len(items) > 0:
-            artist = items[0]
-            self.artist_id = artist['id']
-            return artist
+            return items[0]
         else:
-            raise Exception(messages.artist_not_found)
+            raise Exception(self.artist_not_found_msg)
 
-    def readTopTracks(self):
-        artist_uri = f"spotify:artist:{self.artist_id}"
+    def readTopTracks(self, artist_id):
+        artist_uri = f"spotify:artist:{artist_id}"
         results = self.spotify.artist_top_tracks(artist_uri)
         if results is None or results['tracks'] is None:
-            raise Exception(messages.track_not_found)
-        print(popular_track_list_range)
-        return results['tracks'][:popular_track_list_range]
+            raise Exception(self.track_not_found_msg)
+        print(self.list_range)
+        return results['tracks'][:self.list_range]

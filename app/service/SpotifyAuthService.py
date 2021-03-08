@@ -1,5 +1,4 @@
 import spotipy
-import os
 from spotipy.oauth2 import SpotifyClientCredentials
 from app.exception.AuthorizationException import AuthorizationException
 
@@ -9,17 +8,20 @@ class SpotifyAuthService(object):
     clint_secret = None
     spotipy = None
 
-    def __init__(self, *args, **kwargs):
+    def __init__(self, client_id, client_secret, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        self.clint_id = os.getenv('SP_CLIENT_ID')
-        self.clint_secret = os.getenv('SP_CLIENT_SECRET')
+        self.clint_id = client_id
+        self.clint_secret = client_secret
         self.authorize()
 
     def authorize(self):
-        if self.clint_id is None or self.clint_secret is None:
+        if self.clint_id is None or self.clint_secret is None or self.clint_id is '' or self.clint_secret is '':
             raise AuthorizationException()
-        self.spotipy = spotipy.Spotify(
-            auth_manager=SpotifyClientCredentials(client_id=self.clint_id, client_secret=self.clint_secret))
+        try:
+            self.spotipy = spotipy.Spotify(
+                auth_manager=SpotifyClientCredentials(client_id=self.clint_id, client_secret=self.clint_secret))
+        except Exception:
+            raise AuthorizationException()
 
     def getSpotify(self):
         return self.spotipy
